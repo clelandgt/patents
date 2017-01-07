@@ -35,7 +35,10 @@ DEFAULT_REQUEST_HEADERS = {
 }
 
 # Configure ip proxy
-PROXY_API = 'http://star.princetechs.com/proxy/'
+PROXY_API = None
+
+# Retry if crawl failed
+RETRY_TIMES = 100
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'patents (+http://www.yourdomain.com)'

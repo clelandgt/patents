@@ -46,13 +46,17 @@ class PatentsSpider(scrapy.Spider):
 
     def parse_first_page(self, response):
         company = response.meta.get('company', '')
+        self.logger.info(u'[{0}]: crawl first page, response: {1}'.format(company, response.text))
         text = response.xpath(("//div[@class='page_top']")).extract_first()
-        text = re.search(u'共.*(\d+).*页', text).group()
-        self.logger.info(text)
+        try:
+            text = re.search(u'共.*(\d+).*页', text).group()
+            text = text.replace(u'共', '')
+            text = text.replace(u'页', '')
+            max_page = int(text)
+            self.logger.info(u'[{0}]: has {1} pages.'.format(company, max_page))
+        except Exception as e:
+            self.logger.error(e)
 
-        text = text.replace(u'共', '')
-        text = text.replace(u'页', '')
-        max_page = int(text)
 
 
 
