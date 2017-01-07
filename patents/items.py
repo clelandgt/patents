@@ -4,11 +4,23 @@
 #
 # See documentation in:
 # http://doc.scrapy.org/en/latest/topics/items.html
+from scrapy import Field, Item
 
-import scrapy
+
+class InfoItem(Item):
+    id = Field()
+    name = Field()
+    app_num = Field()
+    app_data = Field()
+    pub_num = Field()
+    ipc_num = Field()
+    app_person = Field()
+    inventor = Field()
+    intro = Field()
+    legal_status = Field()
+    url = Field()
+    parents_url = Field()
+    page_num = Field()
 
 
-class PatentsItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+

@@ -2,7 +2,7 @@
 import scrapy
 
 
-class PatentsSpiderSpider(scrapy.Spider):
+class PatentsSpider(scrapy.Spider):
     name = "patents_spider"
     allowed_domains = ["www.pss-system.gov.cn"]
     start_urls = ['http://www.pss-system.gov.cn/']
