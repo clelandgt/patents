@@ -22,6 +22,21 @@ LOG_LEVEL = 'DEBUG'
 # Set delay time for request
 DOWNLOAD_DELAY = 10
 
+# Configure request headers
+DEFAULT_REQUEST_HEADERS = {
+    'Accept': '*/*',
+    'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4',
+    'Accept-Encoding': 'gzip, deflate',
+    'Connection': 'keep-alive',
+    'Host': 'www.pss-system.gov.cn',
+    'Origin': 'http://www.pss-system.gov.cn',
+    'Referer': 'http://www.pss-system.gov.cn/sipopublicsearch/patentsearch/searchHomeIndex-searchHomeIndex.shtml',
+    'User-Agent': 'Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US)',
+}
+
+# Configure ip proxy
+PROXY_API = 'http://star.princetechs.com/proxy/'
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'patents (+http://www.yourdomain.com)'
 
@@ -34,7 +49,8 @@ ROBOTSTXT_OBEY = False
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-#DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 5
+
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
@@ -61,6 +77,8 @@ ROBOTSTXT_OBEY = False
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
    'patents.middlewares.UserAgentMiddleware': 550,
+   'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 555,
+   'patents.middlewares.UserAgentMiddleware': 556
 }
 
 # Enable or disable extensions
