@@ -8,6 +8,8 @@
 #     http://doc.scrapy.org/en/latest/topics/settings.html
 #     http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 #     http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
+import os
+
 
 BOT_NAME = 'patents'
 
@@ -17,7 +19,7 @@ NEWSPIDER_MODULE = 'patents.spiders'
 
 # Configure logging
 LOG_LEVEL = 'DEBUG'
-# LOG_FILE = 'weibo.log'
+LOG_FILE = 'patents.log'
 
 # Set delay time for request
 DOWNLOAD_DELAY = 10
@@ -35,11 +37,129 @@ DEFAULT_REQUEST_HEADERS = {
 }
 
 # Configure ip proxy
-PROXY_API = None
+PROXIES = [
+    "94.177.175.105:1453",
+    "89.40.113.128:2016",
+    "168.9.128.3:65000",
+    "106.2.187.202:8080",
+    "1.82.216.134:80",
+    "58.217.195.141:80",
+    "218.106.205.145:8080",
+    "1.82.216.135:80",
+    "116.240.96.84:3128",
+    "165.138.65.233:3128",
+    "168.9.128.4:65000",
+    "61.191.41.130:80",
+    "223.68.1.38:8000",
+    "217.33.216.114:8080",
+    "59.46.2.207:8888",
+    "111.13.109.27:80",
+    "204.29.115.149:8080",
+    "222.201.132.32:3128",
+    "190.121.228.83:3128",
+    "168.9.128.144:65000",
+    "61.161.140.171:8080",
+    "192.34.58.204:3128",
+    "123.5.57.136:9999",
+    "218.103.60.205:8080",
+    "61.129.129.72:8080",
+    "182.48.114.49:8080",
+    "167.114.167.221:3128",
+    "123.234.219.133:8080",
+    "200.29.191.149:3128",
+    "120.132.71.212:80",
+    "59.47.125.10:9797",
+    "123.138.89.131:9999",
+    "183.185.3.12:9797",
+    "91.195.183.54:3128",
+    "91.195.183.57:3128",
+    "180.183.102.113:8080",
+    "1.9.171.51:800",
+    "218.56.132.156:8080",
+    "125.31.19.26:80",
+    "203.156.126.55:3129",
+    "183.63.110.202:3128",
+    "188.166.179.244:8080",
+    "163.172.211.141:3128",
+    "221.204.101.103:9797",
+    "222.41.113.43:8080",
+    "221.1.201.142:9797",
+    "50.195.87.91:8080",
+    "37.59.37.41:3128",
+    "114.33.243.177:8080",
+    "101.254.188.198:8080",
+    "210.68.95.62:3128",
+    "91.189.36.132:8080",
+    "154.127.52.157:8080",
+    "108.61.185.109:5555",
+    "115.231.105.109:8081",
+    "113.161.88.153:8080",
+    "94.19.50.41:8080",
+    "124.193.85.88:8080",
+    "45.32.43.217:8081",
+    "27.191.234.69:9999",
+    "122.155.3.143:3128",
+    "210.101.131.231:8080",
+    "218.232.109.137:8090",
+    "36.234.189.93:3128",
+    "201.20.93.54:8080",
+    "84.200.85.55:8888",
+    "58.59.68.91:9797",
+    "1.163.137.229:3128",
+    "128.199.229.21:3128",
+    "119.55.89.142:9999",
+    "218.56.132.155:8080",
+    "119.52.11.14:9999",
+    "149.202.152.171:443",
+    "50.93.202.32:1080",
+    "120.76.203.31:80",
+    "103.10.228.63:8080",
+    "112.126.65.193:80",
+    "149.154.137.205:8080",
+    "1.163.154.77:3128",
+    "37.205.63.19:8080",
+    "185.28.193.95:8080",
+    "128.199.158.131:80",
+    "77.243.125.86:8080",
+    "49.1.244.139:3128",
+    "112.199.65.190:3128",
+    "220.143.169.169:3128",
+    "173.254.197.87:1080",
+    "122.71.133.127:8080",
+    "91.195.230.44:8080",
+    "183.131.151.208:80",
+    "94.177.251.159:2016",
+    "138.201.63.123:31288",
+    "61.223.116.80:3128",
+    "195.246.57.154:8080",
+    "121.15.254.149:808",
+    "61.223.126.131:3128",
+    "220.143.199.243:3128",
+    "202.138.241.62:8080",
+    "80.55.86.174:8080",
+    "83.239.88.170:8080",
+    "180.250.182.50:8080",
+    "128.199.69.153:8080",
+    "50.93.203.31:1080",
+    "192.99.128.170:8080",
+    "216.39.143.96:4440",
+    "103.240.8.2:8080",
+    "113.66.141.212:9797",
+    "36.234.113.182:3128",
+    "118.172.205.85:8080",
+    "202.73.51.102:8128",
+    "89.145.188.122:8080",
+    "211.75.115.20:80",
+    "190.104.245.39:8080",
+    "118.171.10.219:3128",
+    "27.131.47.132:9797",
+    "177.87.10.166:8080",
+    "211.152.62.226:80"
+]
 
-# Retry if crawl failed
+# Retry if download failed
 RETRY_TIMES = 100
-
+RETRY_HTTP_CODES = [500, 503, 502, 504, 302, 303]
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'patents (+http://www.yourdomain.com)'
 
@@ -52,7 +172,7 @@ ROBOTSTXT_OBEY = False
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 5
+DOWNLOAD_DELAY = 2
 
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
@@ -79,9 +199,10 @@ DOWNLOAD_DELAY = 5
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-   'patents.middlewares.UserAgentMiddleware': 550,
-   'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 555,
-   'patents.middlewares.UserAgentMiddleware': 556
+   'scrapy.downloadermiddlewares.retry.RetryMiddleware': 90,
+   'patents.middlewares.ProxyMiddleware': 100,
+   'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+   'patents.middlewares.UserAgentMiddleware': 120,
 }
 
 # Enable or disable extensions
