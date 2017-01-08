@@ -11,7 +11,7 @@ class InfoItem(Item):
     id = Field()
     name = Field()
     app_num = Field()
-    app_data = Field()
+    app_date = Field()
     pub_num = Field()
     ipc_num = Field()
     app_person = Field()
