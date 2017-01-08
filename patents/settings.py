@@ -160,6 +160,11 @@ PROXIES = [
 # Retry if download failed
 RETRY_TIMES = 100
 RETRY_HTTP_CODES = [500, 503, 502, 504, 302, 303]
+
+# Turn off redirect
+REDIRECT_ENABLED = False
+COOKIES_ENABLED = False
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'patents (+http://www.yourdomain.com)'
 

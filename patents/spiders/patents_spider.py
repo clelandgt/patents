@@ -42,7 +42,7 @@ class PatentsSpider(scrapy.Spider):
         }
         for company in self.company_list:
             data['searchCondition.searchExp'] = company
-            yield FormRequest(url=url, formdata=data, callback=self.parse_first_page, dont_filter=True, meta={'company': company}, )
+            yield FormRequest(url=url, formdata=data, callback=self.parse_first_page, dont_filter=True, meta={'company':company, 'dont_redirect': True, "handle_httpstatus_list": [301, 302, 303]})
 
     def parse_first_page(self, response):
         company = response.meta.get('company', '')
