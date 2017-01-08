@@ -42,29 +42,23 @@ class PatentsSpider(scrapy.Spider):
         }
         for company in self.company_list:
             data['searchCondition.searchExp'] = company
-            yield FormRequest(url=url, formdata=data, callback=self.parse_first_page, dont_filter=True, meta={'company':company, 'dont_redirect': True, "handle_httpstatus_list": [301, 302, 303]})
+            yield FormRequest(url=url, formdata=data, callback=self.parse_first_page, dont_filter=True, meta={'company':company, 'dont_redirect': True})
 
     def parse_first_page(self, response):
         company = response.meta.get('company', '')
         text = response.xpath(("//div[@class='page_top']")).extract_first()
         try:
-            text = re.search(u'共.*(\d+).*页', text).group()
-            text = text.replace(u'共', '')
-            text = text.replace(u'页', '')
-            max_page = int(text)
-            self.logger.info(u'[{0}]: has {1} pages.'.format(company, max_page))
+            text = re.findall(u'共.*条数据', text)[0]
+            nums = re.findall(u'(\d+)', text)
+            if int(nums[0]) <= (nums[1]):
+                max_page = int(nums[0])
+                total = int(nums[1])
+            else:
+                max_page = int(nums[1])
+                total = int(nums[0])
+            self.logger.info(u'[{0}]: get first page success. {1} '.format(company, text))
+            self.logger.debug(u'[{0}]: max page: {1}, total: {2}'.format(company, max_page, total))
         except Exception as e:
             self.logger.error(e)
-            self.logger.info(u'[{0}]: parse first page failed, response: {1}, request url: {2}'.format(company, response.text, response.url))
-
-
-
-
-
-
-
-
-
-
-
-
+            self.logger.info(u'[{0}]: parse first page failed. response code: {1}, content: {2}. request url: {3}'.format(company, response.status, response.text, response.url))
+            return

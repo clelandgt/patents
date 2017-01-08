@@ -159,7 +159,7 @@ PROXIES = [
 
 # Retry if download failed
 RETRY_TIMES = 100
-RETRY_HTTP_CODES = [500, 503, 502, 504, 302, 303]
+RETRY_HTTP_CODES = [500, 503, 502, 504, 403, 400, 302, 303]
 
 # Turn off redirect
 REDIRECT_ENABLED = False
