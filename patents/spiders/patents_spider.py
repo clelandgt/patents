@@ -131,7 +131,9 @@ class PatentsSpider(scrapy.Spider):
 
     def crawl_patents(self):
         session = webdriver.Chrome()
+        session.implicitly_wait(10)
         while(True):
+            session.switch_to_window(session.window_handles[0])
             index, results = self.get_rest_task()
             result = results[index]
             app_num = result['申请号']
@@ -139,47 +141,74 @@ class PatentsSpider(scrapy.Spider):
             if not app_num:
                 break
             try:
-                # 遍历专利搜索结果
-                # import ipdb
+                import ipdb
+                # 进入搜索页面
                 session.get(self.search_url)
                 inp = session.find_element_by_id('search_input')
                 inp.clear()
                 inp.send_keys(app_num)
-                sleep(2)
+                sleep(1)
                 inp.send_keys(Keys.ENTER)
+                sleep(2)
+                # 进入搜索结果页面
+                detail = session.find_element_by_xpath("//a[@role='detail']")
+                sleep(2)
+                detail.click()
+                # 进入单个专利页面
                 sleep(5)
-                page_source = session.page_source
-                sleep(5)
-                select = Selector(text=page_source)
-                tables = select.xpath("//div[@class='list-container']/ul/li")
-                # ipdb.set_trace()
-                for table in tables:
-                    invert_name = table.xpath(".//h1[@class='left']/div[2]/a/b/text()").extract_first()
-                    table = table.xpath(".//div[@class='item-content-body left']")
-                    app_date = table.xpath('p[2]/a/text()').extract_first()
-                    pub_num = table.xpath('p[3]/text()').extract_first()
-                    ipcs = table.xpath('p[5]/span/a/text()').extract()
-                    ipc = self.merget_list(ipcs)
-                    app_persons = table.xpath('p[6]/span/a/text()').extract()
-                    app_persons = self.merget_list(app_persons)
-                    inventors = table.xpath('p[7]/span/a/text()').extract()
-                    inventors = self.merget_list(inventors)
-                    is_exist = False
-                    for item in results:
-                        if item['申请号'] == result['申请号']:
-                            if item['申请日'] == app_date:
-                                if item['公开号'] == pub_num:
-                                    is_exist = True
-                    if is_exist:
-                            continue
-                    result['发明名称'] = invert_name
-                    result['申请日'] = app_date
-                    result['公开号'] = pub_num
-                    result['IPC分类号'] = ipc
-                    result['发明人'] = inventors
-                    result['申请人'] = app_persons
-                    self.logger.debug(u'发明名称 {0}, 申请日{1}, 公开号{2}, IPC分类号{3}, 发明人{4}, 申请人{5}'.format(result['发明名称'], result['申请日'], result['公开号'], result['IPC分类号'], result['发明人'], result['申请人']))
-                    break
+                session.switch_to_window(session.window_handles[1])
+                sleep(1)
+                pagesource = session.page_source
+                select = Selector(text=pagesource)
+                elements = select.xpath("//ul[@id='tabContent_1_ul_id']/li")
+                if len(elements) != 0:
+                    for index in range(1, len(elements)+1):
+                        try:
+                            session.find_element_by_xpath("//ul[@id='tabContent_1_ul_id']/li[{}]/a".format(index)).click()
+                            # 解析单个专利
+                            pagesource = session.page_source
+                            select = Selector(text=pagesource)
+                            trs = select.xpath("//div[@class='table-container']/table/tbody/tr")
+                            app_num, app_date, pub_num, ipc, app_person, invertor, intro = '', '', '', '', '', '', ''
+                            for tr in trs:
+                                key = tr.xpath("td[@class='first-td']/div/text()").extract_first()
+                                value = tr.xpath("td[@class='second-td']/div/text()").extract_first()
+                                if key == u'申请号':
+                                    app_num = value
+                                elif key == u'申请日':
+                                    app_date = value
+                                elif key == u'公开（公告）号':
+                                    pub_num = value
+                                elif key == u'IPC分类号':
+                                    ipc = value
+                                elif key == u'申请（专利权）人':
+                                    app_person = value
+                                elif key == u'发明人':
+                                    invertor = value
+                            intro = select.xpath("//*[@id='cpp_content_i0j0']/p/text()").extract_first()
+                        except Exception as e:
+                            self.logger.exception(e)
+                        # 如果该专利已经爬取，就跳过
+                        skip_flag = False
+                        for item in results:
+                            if item['申请号'] == app_num:
+                                if item['申请日'] == app_date:
+                                    if item['公开号'] == pub_num:
+                                        skip_flag = True
+                                        break
+                        if not skip_flag:
+                            result['申请日'] = app_date
+                            result['公开号'] = pub_num
+                            result['IPC分类号'] = ipc
+                            result['申请人'] = app_person
+                            result['发明人'] = invertor
+                            result['摘要'] = intro
+                            self.store_to_file(results)
+
+                    self.logger.debug(u'申请号 {}, 申请日 {}, 公开号 {}, IPC分类号 {}, 申请人 {}, 发明人 {}, 摘要 {}'.format(
+                        result['申请号'], result['申请日'], result['公开号'], result['IPC分类号'], result['申请人'], result['发明人'], result['摘要']
+                    ))
+
             except Exception as e:
                 self.logger.exception(e)
             finally:

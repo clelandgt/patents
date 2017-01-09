@@ -19,7 +19,7 @@ NEWSPIDER_MODULE = 'patents.spiders'
 
 # Configure logging
 LOG_LEVEL = 'DEBUG'
-LOG_FILE = 'patents.log'
+# LOG_FILE = 'patents.log'
 
 # Set delay time for request
 DOWNLOAD_DELAY = 10
