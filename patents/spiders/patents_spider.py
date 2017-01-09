@@ -123,8 +123,7 @@ class PatentsSpider(scrapy.Spider):
         results = self.load_csv(self.result_path)
         index = 0
         for result in results:
-            key = '公开号'.encode('utf-8')
-            if (len(result[key]) == 0):
+            if result['is_crawled'] == '0':
                 return index, results
             self.logger.debug('爬取公开号{}'.format(result['公开号']))
             index += 1
@@ -136,6 +135,7 @@ class PatentsSpider(scrapy.Spider):
             index, results = self.get_rest_task()
             result = results[index]
             app_num = result['申请号']
+            result['is_crawled'] = '1'
             if not app_num:
                 break
             try:
@@ -163,35 +163,31 @@ class PatentsSpider(scrapy.Spider):
                     inventors = table.xpath('p[7]/span/a/text()').extract()
                     inventors = self.merget_list(inventors)
                     is_exist = False
-                    # import ipdb
-                    # ipdb.set_trace()
                     for item in results:
                         if item['申请号'] == result['申请号']:
                             if item['申请日'] == app_date:
                                 if item['公开号'] == pub_num:
                                     is_exist = True
                     if is_exist:
-                        continue
+                            continue
                     result['发明名称'] = invert_name
                     result['申请日'] = app_date
                     result['公开号'] = pub_num
                     result['IPC分类号'] = ipc
                     result['发明人'] = inventors
                     result['申请人'] = app_persons
-                    self.store_to_file(results, self.result_path)
-                    # ipdb.set_trace()
                     self.logger.debug(u'发明名称 {0}, 申请日{1}, 公开号{2}, IPC分类号{3}, 发明人{4}, 申请人{5}'.format(result['发明名称'], result['申请日'], result['公开号'], result['IPC分类号'], result['发明人'], result['申请人']))
                     break
-
-
             except Exception as e:
-                self.logger.error(e)
+                self.logger.exception(e)
+            finally:
+                self.store_to_file(results, self.result_path)
         session.quit()
         self.logger.info('crawl all task.')
 
     def store_to_file(self, results, path):
         with open(path, 'w') as f:
-            fieldnames = [u'发明名称', u'申请号', u'申请日', u'公开号', u'IPC分类号', u'申请人', u'发明人', u'摘要', u'法律状态']
+            fieldnames = [u'发明名称', u'申请号', u'申请日', u'公开号', u'IPC分类号', u'申请人', u'发明人', u'摘要', u'法律状态', u'is_crawled']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for item in results:
@@ -204,7 +200,9 @@ class PatentsSpider(scrapy.Spider):
                     u'申请人': item['申请人'],
                     u'发明人': item['发明人'],
                     u'摘要': '',
-                    u'法律状态': ''})
+                    u'法律状态': '',
+                    u'is_crawled': item['is_crawled']
+                })
             writer.writerows(results)
 
     def merget_list(self, list):
