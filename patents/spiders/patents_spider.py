@@ -125,7 +125,7 @@ class PatentsSpider(scrapy.Spider):
         for result in results:
             if result['is_crawled'] == '0':
                 return index, results
-            self.logger.debug('爬取公开号{}'.format(result['公开号']))
+            self.logger.debug('爬取申请号{}'.format(result['申请号']))
             index += 1
         return None
 
@@ -140,6 +140,7 @@ class PatentsSpider(scrapy.Spider):
                 break
             try:
                 # 遍历专利搜索结果
+                # import ipdb
                 session.get(self.search_url)
                 inp = session.find_element_by_id('search_input')
                 inp.clear()
@@ -151,6 +152,7 @@ class PatentsSpider(scrapy.Spider):
                 sleep(5)
                 select = Selector(text=page_source)
                 tables = select.xpath("//div[@class='list-container']/ul/li")
+                # ipdb.set_trace()
                 for table in tables:
                     invert_name = table.xpath(".//h1[@class='left']/div[2]/a/b/text()").extract_first()
                     table = table.xpath(".//div[@class='item-content-body left']")
@@ -203,7 +205,6 @@ class PatentsSpider(scrapy.Spider):
                     u'法律状态': '',
                     u'is_crawled': item['is_crawled']
                 })
-            writer.writerows(results)
 
     def merget_list(self, list):
         stream = ''
