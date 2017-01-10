@@ -35,15 +35,18 @@ class PatentsSpider(scrapy.Spider):
     ]
 
     def __init__(self):
-        self.result_path = 'results.csv'
         self.logger = logging.getLogger(__name__)
         self.search_url = 'http://www.pss-system.gov.cn/sipopublicsearch/patentsearch/searchHomeIndex-searchHomeIndex.shtml'
 
     def start_requests(self):
+        '''爬取的入口函数
+
+        :return:
+        '''
         for company in self.company_list:
             path = '{}.csv'.format(company)
-            #self.crawl_app_nums(company, path)
-            self.crawl_patents(path)
+            self.crawl_app_nums(company, path)  # 爬取该公司所有专利的申请号，生成'公司.csv'文件
+            self.crawl_patents(path) # 读取'公司.csv文件'，然后遍历申请号，并根据每次遍历得到的专利申请号去爬取该专利详细信息，并填入公司.csv'。
 
     def crawl_app_nums(self, company, path):
         ''' 获取公司的所有的专利申请号
@@ -133,6 +136,11 @@ class PatentsSpider(scrapy.Spider):
         return None
 
     def crawl_patents(self, path):
+        ''' 爬取专利的详细信息
+
+        :param path:
+        :return:
+        '''
         session = webdriver.Chrome()
         session.implicitly_wait(10)
         now_handle = session.current_window_handle
