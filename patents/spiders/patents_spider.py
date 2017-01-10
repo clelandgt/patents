@@ -42,10 +42,11 @@ class PatentsSpider(scrapy.Spider):
 
     def start_requests(self):
         for company in self.company_list:
-            # self.get_app_num_by_company_name(company)
-            self.crawl_patents()
+            path = '{}.csv'.format(company)
+            self.crawl_app_nums(company, path)
+            #self.crawl_patents()
 
-    def get_app_num_by_company_name(self, company):
+    def crawl_app_nums(self, company, path):
         ''' 获取公司的所有的专利申请号
 
         :param company:
@@ -71,10 +72,11 @@ class PatentsSpider(scrapy.Spider):
             max_page = int(nums[1])
             total = int(nums[0])
         self.logger.info(u'[{0}]: get first page success. {1} '.format(company, text))
-        self.logger.debug(u'[{0}]: max page: {1}, total: {2}'.format(company, max_page, total))
+        self.logger.info(u'[{0}]: max page: {1}, total: {2}'.format(company, max_page, total))
 
         # 遍历多页得到专利申请号
-        for page in xrange(22, max_page + 1):
+        app_nums = []
+        for page in xrange(1, max_page + 1):
             try:
                 inp = session.find_element_by_id('txt')
                 inp.clear()
@@ -85,30 +87,32 @@ class PatentsSpider(scrapy.Spider):
                 page_source = session.page_source
                 sleep(5)
                 select = Selector(text=page_source)
-                app_nums = select.xpath("//div[@class='item-content-body left']/p[1]/text()").extract()
+                items = select.xpath("//div[@class='item-content-body left']/p[1]/text()").extract()
+                app_nums.extend(items)
                 self.logger.info('crawl page: {} success.'.format(page))
             except Exception as e:
                 self.logger.error(e)
                 self.logger.info('crawl page: {} failed.'.format(page))
                 continue
+        results = []
+        # 申请号，去重。并根据申请号生成爬取清单。
+        app_nums = list(set(app_nums))
+        for app_num in app_nums:
+            result = {
+                '发明名称': '',
+                '申请号': app_num,
+                '申请日': '',
+                '公开号': '',
+                'IPC分类号': '',
+                '申请人': '',
+                '发明人': '',
+                '摘要': '',
+                '法律状态': '',
+                'is_crawled': '0'
+            }
+            results.append(result)
+        self.store_to_file(results, path)
 
-            file_exists = os.path.isfile(self.result_path)
-            with open(self.result_path, 'a') as f:
-                fieldnames = [u'发明名称', u'申请号', u'申请日', u'公开号', u'IPC分类号', u'申请人', u'发明人', u'摘要', u'法律状态']
-                writer = csv.DictWriter(f, fieldnames=fieldnames)
-                if not file_exists:
-                    writer.writeheader()
-                for num in app_nums:
-                    writer.writerow({
-                        u'发明名称': '',
-                        u'申请号': num,
-                        u'申请日': '',
-                        u'公开号': '',
-                        u'IPC分类号': '',
-                        u'申请人': '',
-                        u'发明人': '',
-                        u'摘要': '',
-                        u'法律状态': ''})
         session.quit()
 
     def load_csv(self, path):
@@ -243,15 +247,6 @@ class PatentsSpider(scrapy.Spider):
                     u'法律状态': '',
                     u'is_crawled': item['is_crawled']
                 })
-
-    def merget_list(self, list):
-        stream = ''
-        for item in list:
-            item = item.replace('\n', '').replace('\t', '')
-            if len(item) != 0:
-                stream += '{},'.format(item)
-        return stream
-
 
 
 
