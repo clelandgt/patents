@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import re
 import csv
 import logging
@@ -43,8 +42,8 @@ class PatentsSpider(scrapy.Spider):
     def start_requests(self):
         for company in self.company_list:
             path = '{}.csv'.format(company)
-            self.crawl_app_nums(company, path)
-            #self.crawl_patents()
+            #self.crawl_app_nums(company, path)
+            self.crawl_patents(path)
 
     def crawl_app_nums(self, company, path):
         ''' 获取公司的所有的专利申请号
@@ -112,7 +111,7 @@ class PatentsSpider(scrapy.Spider):
             }
             results.append(result)
         self.store_to_file(results, path)
-
+        self.logger.info('crawl all task.')
         session.quit()
 
     def load_csv(self, path):
@@ -123,8 +122,8 @@ class PatentsSpider(scrapy.Spider):
                 results.append(line)
         return results
 
-    def get_rest_task(self):
-        results = self.load_csv(self.result_path)
+    def get_rest_task(self, path):
+        results = self.load_csv(path)
         index = 0
         for result in results:
             if result['is_crawled'] == '0':
@@ -133,7 +132,7 @@ class PatentsSpider(scrapy.Spider):
             index += 1
         return None
 
-    def crawl_patents(self):
+    def crawl_patents(self, path):
         session = webdriver.Chrome()
         session.implicitly_wait(10)
         now_handle = session.current_window_handle
@@ -147,14 +146,13 @@ class PatentsSpider(scrapy.Spider):
                     session.close()
             # 切换到主窗口
             session.switch_to_window(now_handle)
-            index, results = self.get_rest_task()
+            index, results = self.get_rest_task(path)
             result = results[index]
             app_num = result['申请号']
             result['is_crawled'] = '1'
             if not app_num:
                 break
             try:
-                import ipdb
                 # 进入搜索页面
                 session.get(self.search_url)
                 inp = session.find_element_by_id('search_input')
@@ -169,63 +167,32 @@ class PatentsSpider(scrapy.Spider):
                 sleep(5)
                 session.switch_to_window(session.window_handles[1])
                 sleep(1)
+                # 解析单个专利
                 pagesource = session.page_source
                 select = Selector(text=pagesource)
-                elements = select.xpath("//ul[@id='tabContent_1_ul_id']/li")
-                if len(elements) != 0:
-                    for index in range(1, len(elements)+1):
-                        try:
-                            session.find_element_by_xpath("//ul[@id='tabContent_1_ul_id']/li[{}]/a".format(index)).click()
-                            # 解析单个专利
-                            pagesource = session.page_source
-                            select = Selector(text=pagesource)
-                            ipdb.set_trace()
-                            result['发明名称'] = select.xpath("//*[@id='tabContent_1_id']/div[1]/text()").extract_first()
-                            trs = select.xpath("//div[@class='table-container']/table/tbody/tr")
-                            app_num, app_date, pub_num, ipc, app_person, invertor, intro = '', '', '', '', '', '', ''
-                            for tr in trs:
-                                key = tr.xpath("td[@class='first-td']/div/text()").extract_first()
-                                value = tr.xpath("td[@class='second-td']/div/text()").extract_first()
-                                if key == u'申请号':
-                                    app_num = value
-                                elif key == u'申请日':
-                                    app_date = value
-                                elif key == u'公开（公告）号':
-                                    pub_num = value
-                                elif key == u'IPC分类号':
-                                    ipc = value
-                                elif key == u'申请（专利权）人':
-                                    app_person = value
-                                elif key == u'发明人':
-                                    invertor = value
-                            intro = select.xpath("//*[@id='cpp_content_i0j0']/p/text()").extract_first()
-
-                            # 如果该专利已经爬取，就跳过
-                            skip_flag = False
-                            for item in results:
-                                if item['申请号'] == app_num:
-                                    if item['申请日'] == app_date:
-                                        if item['公开号'] == pub_num:
-                                            skip_flag = True
-                                            break
-                            if not skip_flag:
-                                result['申请日'] = app_date
-                                result['公开号'] = pub_num
-                                result['IPC分类号'] = ipc
-                                result['申请人'] = app_person
-                                result['发明人'] = invertor
-                                result['摘要'] = intro
-                        except Exception as e:
-                            self.logger.exception(e)
-
-                    self.logger.debug(u'申请号 {}, 申请日 {}, 公开号 {}, IPC分类号 {}, 申请人 {}, 发明人 {}, 摘要 {}'.format(
-                        result['申请号'], result['申请日'], result['公开号'], result['IPC分类号'], result['申请人'], result['发明人'], result['摘要']
-                    ))
-
+                result['发明名称'] = select.xpath("//*[@id='tabContent_1_id']/div[1]/text()").extract_first()
+                trs = select.xpath("//div[@class='table-container']/table/tbody/tr")
+                for tr in trs:
+                    key = tr.xpath("td[@class='first-td']/div/text()").extract_first()
+                    value = tr.xpath("td[@class='second-td']/div/text()").extract_first()
+                    if key == u'申请日':
+                        result['申请日'] = value
+                    elif key == u'公开（公告）号':
+                        result['公开号'] = value
+                    elif key == u'IPC分类号':
+                        result['IPC分类号'] = value
+                    elif key == u'申请（专利权）人':
+                        result['申请人'] = value
+                    elif key == u'发明人':
+                        result['发明人'] = value
+                result['摘要'] = select.xpath("//*[@id='cpp_content_i0j0']/p/text()").extract_first()
+                self.logger.debug(u'申请号 {}, 申请日 {}, 公开号 {}, IPC分类号 {}, 申请人 {}, 发明人 {}, 摘要 {}'.format(
+                    result['申请号'], result['申请日'], result['公开号'], result['IPC分类号'], result['申请人'], result['发明人'], result['摘要']
+                ))
             except Exception as e:
                 self.logger.exception(e)
             finally:
-                self.store_to_file(results, self.result_path)
+                self.store_to_file(results, path)
         session.quit()
         self.logger.info('crawl all task.')
 
@@ -247,9 +214,3 @@ class PatentsSpider(scrapy.Spider):
                     u'法律状态': '',
                     u'is_crawled': item['is_crawled']
                 })
-
-
-
-
-
-
